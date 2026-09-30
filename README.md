@@ -7,7 +7,7 @@ uang, menjaga jatah bulanan, dan menetaskan telur tabungan.
 
 ## Fitur
 
-- **Login & daftar** dengan email + kata sandi, termasuk lupa kata sandi (reset lewat email)
+- **Satu akun utama**: login memakai akun Supabase Auth yang sudah ada (tanpa halaman daftar), plus lupa kata sandi lewat email
 - **Catat transaksi** pemasukan / pengeluaran per kategori, format Rupiah otomatis
 - **Riwayat per bulan** dengan navigasi bulan, filter, pencarian, dan hapus (dengan konfirmasi)
 - **Saldo di gua** = total pemasukan − total pengeluaran − isi tabungan
@@ -16,7 +16,7 @@ uang, menjaga jatah bulanan, dan menetaskan telur tabungan.
 - **Jatah Makan Dino**: batas bulanan per kategori (bisa diatur) dengan status Aman / Hampir / Kenyang
 - **Koleksi Fosil**: 1 fosil untuk tiap hari hemat (pengeluaran < Rp150.000) dalam 7 hari terakhir
 - **Mode gelap** otomatis mengikuti pengaturan perangkat, tampilan rapi di ponsel
-- **Aman**: Row Level Security Supabase memastikan setiap akun hanya bisa melihat datanya sendiri
+- **Terkunci untuk pemilik**: Row Level Security hanya mengizinkan akun utama membaca dan mengubah data. Akun lain yang mencoba masuk akan melihat layar "tidak punya akses"
 
 ## Struktur
 
@@ -41,17 +41,25 @@ DinorixLand-Sal/
 
 ## Langkah 1 — Siapkan Supabase
 
-1. Buka <https://supabase.com>, buat akun, lalu **New project**. Catat kata sandi database-nya.
-2. Setelah project siap, buka **SQL Editor → New query**.
-3. Salin seluruh isi `supabase/schema.sql`, tempel, lalu klik **Run**. Harus muncul *Success*.
+1. Buka project Supabase kamu. Pastikan akun utama sudah ada di **Authentication → Users**
+   dan statusnya sudah terkonfirmasi. (Kalau belum ada: **Add user → Create new user**, isi email
+   & kata sandi, centang **Auto Confirm User**.)
+2. Buka `supabase/schema.sql`, cari tulisan `GANTI_DENGAN_EMAIL_KAMU@gmail.com` di bagian paling
+   bawah, lalu ganti dengan email akun utama tersebut.
+3. Buka **SQL Editor → New query**, tempel **seluruh** isi `schema.sql`, lalu klik **Run**.
+   Harus muncul *Success*. Kalau muncul *Akun "…" tidak ditemukan*, periksa ejaan emailnya.
 4. Buka **Project Settings → API** (di versi baru: **Data API** dan **API Keys**) dan catat:
    - **Project URL** → untuk `VITE_SUPABASE_URL`
    - **anon public key** (atau **publishable key**) → untuk `VITE_SUPABASE_ANON_KEY`
 
    ⚠️ Jangan pernah memakai `service_role` / secret key di aplikasi ini.
 
-5. (Opsional untuk uji coba) **Authentication → Sign In / Providers → Email**: matikan
-   *Confirm email* supaya bisa langsung masuk setelah daftar. Untuk produksi sebaiknya tetap aktif.
+5. **Matikan pendaftaran akun baru**: **Authentication → Sign In / Providers** → nonaktifkan
+   **Allow new users to sign up**. Dengan begitu tidak ada orang lain yang bisa membuat akun
+   lewat API. (Data tetap terkunci untuk akun utama walaupun langkah ini terlewat.)
+
+> **Mau ganti akun utama?** Ubah email di bagian bawah `schema.sql`, lalu jalankan lagi.
+> Data transaksi lama tetap milik akun sebelumnya.
 
 ## Langkah 2 — Jalankan di komputer (opsional)
 
@@ -112,7 +120,7 @@ Supaya tautan konfirmasi email dan reset kata sandi mengarah ke situsmu:
 | Gejala | Solusi |
 | --- | --- |
 | Muncul layar "Supabase belum tersambung" | Environment variable belum diisi, atau belum redeploy setelah mengisinya |
-| "Gagal memuat data … function get_totals does not exist" | `schema.sql` belum dijalankan di SQL Editor |
-| Setelah daftar tidak bisa masuk | Klik tautan konfirmasi di email, atau matikan *Confirm email* (Langkah 1.5) |
+| "Gagal memuat data … function is_owner / get_totals does not exist" | `schema.sql` belum dijalankan di SQL Editor |
+| Muncul "Akun ini tidak punya akses" | Email yang dipakai login berbeda dengan email di bagian AKUN UTAMA `schema.sql`. Samakan lalu Run lagi |
+| "Email akun ini belum dikonfirmasi" | Supabase → Authentication → Users → pilih akun → konfirmasi email |
 | Tautan email membuka localhost | Atur **Site URL** di Langkah 4 |
-| Akun lama tidak punya jatah / sarang | Tekan "Atur jatah" lalu simpan, dan "Buat Sarang" di panel tabungan |
